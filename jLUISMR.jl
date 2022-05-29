@@ -19,10 +19,27 @@ function simulate_function()
 	val = eval(Meta.parse(gettext(jLUISMRui["jLUISM_textual_model"])))
 	set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "")
 	empty!(jLUISM_Vars_List_Store)
-
+	jLUISM_startTime=eval(Meta.parse(gettext(jLUISMRui["jLUISM_start_Time"])))
+	if isnothing(jLUISM_startTime)
+		jLUISM_startTime=0.0
+	end
+	jLUISM_stopTime=eval(Meta.parse(gettext(jLUISMRui["jLUISM_stop_Time"])))
+	if isnothing(jLUISM_stopTime)
+		jLUISM_stopTime=10.0
+	end
+	jLUISM_interval=eval(Meta.parse(gettext(jLUISMRui["jLUISM_step_Time"])))
+	if isnothing(jLUISM_interval)
+		jLUISM_interval=(jLUISM_stopTime-jLUISM_startTime)/500
+	end
+	jLUISM_allow_Simulation=false
+	if (jLUISM_startTime<jLUISM_stopTime) & (jLUISM_interval<(jLUISM_stopTime-jLUISM_startTime)) & (0<jLUISM_interval)
+		jLUISM_allow_Simulation=true
+	end
+	if jLUISM_allow_Simulation == true
 	try
            	instantiatedModeljLUISMR=@instantiateModel(val)
-		result=simulate!(instantiatedModeljLUISMR, Tsit5(), stopTime = 10.0, log=true)
+		result=simulate!(instantiatedModeljLUISMR, Tsit5(), startTime=jLUISM_startTime, stopTime = jLUISM_stopTime, interval=jLUISM_interval, log=true)
+#simulate!(pendulum1, Tsit5(), startTime=jLUISM_startTime, stopTime = jLUISM_stopTime, interval=jLUISM_interval, log=true)    
 		jLUISM_SimVars_Names = signalNames(instantiatedModeljLUISMR)
 		jLUISM_SimVars_Names = unique(jLUISM_SimVars_Names)
 		
@@ -38,7 +55,7 @@ function simulate_function()
 		#savefig("C:\\Resairchia\\apepefile.svg");
 		#savefig("C:\\Resairchia\\apepefile2.png");
 		#writedlm( "C:\\Resairchia\\FileName.csv", (x,y), ',')
-
+				set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Simulation completed. Showing results.")
 
 		tv = GtkTreeView(GtkTreeModel(jLUISM_Vars_List_Store))
 		selection = GAccessor.selection(tv)
@@ -53,13 +70,14 @@ function simulate_function()
     				currentIt = selected(selection)
 
     # now you can to something with the selected item
-    		#println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Age: ", jLUISM_Vars_List_Store[currentIt,2], "Length: ")
+    		#println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Initial value: ", jLUISM_Vars_List_Store[currentIt,2], " Ending value: ")
 
            	#instantiatedModeljLUISMR=@instantiateModel(val)
 		#result=simulate!(instantiatedModeljLUISMR, Tsit5(), stopTime = 10.0, log=true)
 #toXs=getPlotSignal(instantiatedModeljLUISMR,"phi")
 #toYs=getPlotSignal(instantiatedModeljLUISMR,"w")
-				set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Simulation completed. Showing results.")
+
+    println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Initial value: ", jLUISM_Vars_List_Store[currentIt,2], " Ending value: ", jLUISM_Vars_List_Store[currentIt,3])
 				Plots.plot(getPlotSignal(instantiatedModeljLUISMR,"time")[3],getPlotSignal(instantiatedModeljLUISMR,jLUISM_Vars_List_Store[currentIt,1])[3], label=jLUISM_Vars_List_Store[currentIt,1]);
 
 
@@ -76,9 +94,11 @@ function simulate_function()
             println("Error found when attempting to simulate with jLUISMR")
           	rethrow(e)
       end
-	set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Simulated")
+	set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Finished")
 	Plots.gui()
-
+else
+set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Wrong simulation setup. Check start time, stop time, and time step.")
+end #end if allowing simulation
 	return nothing
 end
 
