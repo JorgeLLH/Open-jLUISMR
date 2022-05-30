@@ -35,28 +35,16 @@ function simulate_function()
 	if (jLUISM_startTime<jLUISM_stopTime) & (jLUISM_interval<(jLUISM_stopTime-jLUISM_startTime)) & (0<jLUISM_interval)
 		jLUISM_allow_Simulation=true
 	end
-	if jLUISM_allow_Simulation == true
+
 	try
            	instantiatedModeljLUISMR=@instantiateModel(val)
 		result=simulate!(instantiatedModeljLUISMR, Tsit5(), startTime=jLUISM_startTime, stopTime = jLUISM_stopTime, interval=jLUISM_interval, log=true)
-#simulate!(pendulum1, Tsit5(), startTime=jLUISM_startTime, stopTime = jLUISM_stopTime, interval=jLUISM_interval, log=true)    
 		jLUISM_SimVars_Names = signalNames(instantiatedModeljLUISMR)
 		jLUISM_SimVars_Names = unique(jLUISM_SimVars_Names)
-		
 		for i in 1:length(jLUISM_SimVars_Names)
 			push!(jLUISM_Vars_List_Store,(jLUISM_SimVars_Names[i],getPlotSignal(instantiatedModeljLUISMR,jLUISM_SimVars_Names[i])[3][1],last(getPlotSignal(instantiatedModeljLUISMR,jLUISM_SimVars_Names[i])[3])))
 		end
-
-		#x=result[1,:]
-		#xs=x
-		#y=result[2,:]
-		#ys=y
-		#Plots.plot(xs,ys);
-		#savefig("C:\\Resairchia\\apepefile.svg");
-		#savefig("C:\\Resairchia\\apepefile2.png");
-		#writedlm( "C:\\Resairchia\\FileName.csv", (x,y), ',')
-				set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Simulation completed. Showing results.")
-
+		set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Simulation completed. Showing results.")
 		tv = GtkTreeView(GtkTreeModel(jLUISM_Vars_List_Store))
 		selection = GAccessor.selection(tv)
 		rTxt = GtkCellRendererText()
@@ -68,79 +56,21 @@ function simulate_function()
 		signal_connect(selection, "changed") do widget
 			if hasselection(selection)
     				currentIt = selected(selection)
-
-    # now you can to something with the selected item
-    		#println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Initial value: ", jLUISM_Vars_List_Store[currentIt,2], " Ending value: ")
-
-           	#instantiatedModeljLUISMR=@instantiateModel(val)
-		#result=simulate!(instantiatedModeljLUISMR, Tsit5(), stopTime = 10.0, log=true)
-#toXs=getPlotSignal(instantiatedModeljLUISMR,"phi")
-#toYs=getPlotSignal(instantiatedModeljLUISMR,"w")
-
-    println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Initial value: ", jLUISM_Vars_List_Store[currentIt,2], " Ending value: ", jLUISM_Vars_List_Store[currentIt,3])
+    				println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Initial value: ", jLUISM_Vars_List_Store[currentIt,2], " Ending value: ", jLUISM_Vars_List_Store[currentIt,3])
 				Plots.plot(getPlotSignal(instantiatedModeljLUISMR,"time")[3],getPlotSignal(instantiatedModeljLUISMR,jLUISM_Vars_List_Store[currentIt,1])[3], label=jLUISM_Vars_List_Store[currentIt,1]);
-
-
-				savefig("C:\\Resairchia\\apepefile3.png");
-		# Double call to deal with a Plots bug "send: no error"
 				Plots.gui()
 				Plots.gui()
   			end
 		end
 		win = GtkWindow(tv, "Simulation results. Click on the variable name to plot.")
-		showall(win)
-
-      catch e
+      	catch e
             println("Error found when attempting to simulate with jLUISMR")
           	rethrow(e)
-      end
+      	end 
 	set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Finished")
-	Plots.gui()
-else
-set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Wrong simulation setup. Check start time, stop time, and time step.")
-end #end if allowing simulation
 	return nothing
 end
-
-function variables_showPlots()
-	
-tv = GtkTreeView(GtkTreeModel(jLUISM_Vars_List_Store))
-selection = GAccessor.selection(tv)
-rTxt = GtkCellRendererText()
-rTog = GtkCellRendererToggle()
-c1 = GtkTreeViewColumn("Name", rTxt, Dict([("text",0)]))
-c2 = GtkTreeViewColumn("Initial value", rTxt, Dict([("text",1)]))
-c3 = GtkTreeViewColumn("Ending value", rTxt, Dict([("text",2)]))
-push!(tv, c1, c2, c3)
-signal_connect(selection, "changed") do widget
-  if hasselection(selection)
-    currentIt = selected(selection)
-
-    # now you can to something with the selected item
-    println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Age: ", jLUISM_Vars_List_Store[currentIt,2], "Length: ")
-
-
-	
-           	#instantiatedModeljLUISMR=@instantiateModel(val)
-		#result=simulate!(instantiatedModeljLUISMR, Tsit5(), stopTime = 10.0, log=true)
-#toXs=getPlotSignal(instantiatedModeljLUISMR,"phi")
-#toYs=getPlotSignal(instantiatedModeljLUISMR,"w")
-set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "g")
-		Plots.plot(getPlotSignal(instantiatedModeljLUISMR,"time")[3],getPlotSignal(instantiatedModeljLUISMR,jLUISM_Vars_List_Store[currentIt,1])[3], label=jLUISM_Vars_List_Store[currentIt,1]);
-
-
-savefig("C:\\Resairchia\\apepefile3.png");
-# Double call to deal with a Plots bug "send: no error"
-Plots.gui()
-Plots.gui()
-  end
-end
-win = GtkWindow(tv, "Simulation results. Click on the variable name to plot.")
-showall(win)
-end
-
 function instantiate_function()
-
 	val = eval(Meta.parse(gettext(jLUISMRui["jLUISM_textual_model"])))
 	try
            	instantiatedModeljLUISMR=@instantiateModel(val)
@@ -149,14 +79,10 @@ function instantiate_function()
           	rethrow(e)
       end
 	set_gtk_property!(jLUISMRui["jLUISM_debugg_window"], :text, "Instantiated!")
-
 	return nothing
 end
-
 signal_connect(x -> simulate_function(), jLUISMRui["jLUISMR_simulate"], "clicked")
 signal_connect(x -> instantiate_function(), jLUISMRui["jLUISMR_instantiate"], "clicked")
-
-
 if !isinteractive()
 	c = Condition()
 	signal_connect(jLUISMRui["jLUISM_Main_window"], :destroy) do widget
