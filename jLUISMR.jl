@@ -1,8 +1,8 @@
 #!/usr/bin/env julia
-using Modia, Plots, Gtk, Gtk.ShortNames, DelimitedFiles, ModiaResult
+using Modia, PyPlot, Gtk, Gtk.ShortNames, DelimitedFiles, ModiaResult
 import ModiaResult
 
-jLUISMRui = Builder(filename=(@__DIR__) * "/jLUISMR.glade")
+jLUISMRui = GtkBuilder(filename=(@__DIR__) * "/jLUISMR.glade")
 
 
 #not working yet: jLUISM_variables_tree=jLUISMRui["jLUISM_variables_tree"]
@@ -10,6 +10,7 @@ jLUISM_Vars_List_Store = GtkListStore(String, Float64, Float64)
 jLUISM_SimVars_Names = GtkListStore(String)
 jLUISM_pepe = GtkListStore(Float64)
 jLUISM_Results_Length = GtkListStore(Int)
+pygui(true)
 
 showall(jLUISMRui["jLUISM_Main_window"])
 
@@ -57,12 +58,12 @@ function simulate_function()
 			if hasselection(selection)
     				currentIt = selected(selection)
     				println("Name: ", jLUISM_Vars_List_Store[currentIt,1], " Initial value: ", jLUISM_Vars_List_Store[currentIt,2], " Ending value: ", jLUISM_Vars_List_Store[currentIt,3])
-				Plots.plot(getPlotSignal(instantiatedModeljLUISMR,"time")[3],getPlotSignal(instantiatedModeljLUISMR,jLUISM_Vars_List_Store[currentIt,1])[3], label=jLUISM_Vars_List_Store[currentIt,1]);
-				Plots.gui()
-				Plots.gui()
+				PyPlot.plot(getPlotSignal(instantiatedModeljLUISMR,"time")[3],getPlotSignal(instantiatedModeljLUISMR,jLUISM_Vars_List_Store[currentIt,1])[3], label=jLUISM_Vars_List_Store[currentIt,1])
+				display(gcf())
   			end
 		end
 		win = GtkWindow(tv, "Simulation results. Click on the variable name to plot.")
+		showall(win)
       	catch e
             println("Error found when attempting to simulate with jLUISMR")
           	rethrow(e)
