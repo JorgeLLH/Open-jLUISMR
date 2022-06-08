@@ -1,0 +1,6 @@
+Model(
+   y   = Var(init = 1),
+   equations = :[
+der(y)=-15*y
+   ]
+)
