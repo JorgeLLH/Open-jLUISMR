@@ -1,0 +1,13 @@
+Model(
+   L = 0.8u"m",
+   m = 1.0u"kg",
+   d = 0.5u"N*m*s/rad",
+   g = 9.81u"m/s^2",
+   phi = Var(init = 1.57u"rad"),
+   w   = Var(init = 0u"rad/s"),
+   equations = :[
+          w = der(phi)
+        0.0 = m*L^2*der(w) + d*w + m*g*L*sin(phi)
+          r = [L*cos(phi), -L*sin(phi)]
+   ]
+)
