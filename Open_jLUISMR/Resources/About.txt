@@ -1,0 +1,26 @@
+Should you need to report any issues or bugs, please do so to: 
+https://github.com/JorgeLLH/Open-jLUISMR
+And open an Issue there. This way we can keep people aware of them and maybe discuss solutions.
+
+In your message try to follow the following structure:
+1) Short description of the issue.
+2) Steps to reproduce it.
+3) Julia version, OS and, if possible, Processor and amount of RAM.
+3) Comments.
+
+References used during the development of Open jLUISMR were:
+
+- Documentation of the DifferentialEquations package (https://diffeq.sciml.ai/stable/solvers/ode_solve/).
+@article{rackauckas2017differentialequations,
+  title={Differentialequations.jl--a performant and feature-rich ecosystem for solving differential equations in julia},
+  author={Rackauckas, Christopher and Nie, Qing},
+  journal={Journal of Open Research Software},
+  volume={5},
+  number={1},
+  year={2017},
+  publisher={Ubiquity Press}
+}
+
+- Documentation of the Gtk package ().
+
+- Documentation of the Modia package ().
