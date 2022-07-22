@@ -1,9 +1,6 @@
 #!/usr/bin/env julia
-using Modia, PyPlot, Gtk, Gtk.ShortNames, DelimitedFiles, ModiaResult
-import ModiaResult
+using Modia, PyPlot, Gtk, Gtk.ShortNames
 
-jLUISMR_Vars_List_Store = GtkListStore(String, Float64, Float64)
-jLUISMR_SimVars_Names = GtkListStore(String)
 pygui(true)
 
 mutable struct TextModule
@@ -24,10 +21,13 @@ gettext(textview::GtkTextView) = get_gtk_property(textview, :buffer, GtkTextBuff
 textcontent = open(io->read(io, String), pwd() * "/Open_jLUISMR/Resources/WelcomeMessage_jLUISMR.txt")
 writetext!(jLUISMRui["jLUISMR_help_TextView"], textcontent)
 
+#---------------------------Main function for simulation -------------------------
 function simulate_function()
+	jLUISMR_Vars_List_Store = GtkListStore(String, Float64, Float64)
+	jLUISMR_SimVars_Names = GtkListStore(String)
 	val = eval(Meta.parse(gettext(jLUISMRui["jLUISMR_textual_model"])))
 	set_gtk_property!(jLUISMRui["jLUISMR_debugg_window"], :text, "")
-	empty!(jLUISMR_Vars_List_Store)
+
 	jLUISMR_startTime=eval(Meta.parse(gettext(jLUISMRui["jLUISMR_start_Time"])))
 	if isnothing(jLUISMR_startTime)
 		jLUISMR_startTime=0.0
@@ -47,12 +47,16 @@ function simulate_function()
 	try
            	instantiatedModeljLUISMR=@instantiateModel(val)
 		result=simulate!(instantiatedModeljLUISMR, eval(Meta.parse(Gtk.bytestring( GAccessor.active_text(jLUISMRui["jLUISMR_solver_test"])))), startTime=jLUISMR_startTime, stopTime = jLUISMR_stopTime, interval=jLUISMR_interval, log=true)
-		jLUISMR_SimVars_Names = signalNames(instantiatedModeljLUISMR)
-		jLUISMR_SimVars_Names = unique(jLUISMR_SimVars_Names)
+		jLUISMR_SimVars_Names = SignalTables.getSignalNames(instantiatedModeljLUISMR)
 		for i in 1:length(jLUISMR_SimVars_Names)
-			push!(jLUISMR_Vars_List_Store,(jLUISMR_SimVars_Names[i],getPlotSignal(instantiatedModeljLUISMR,jLUISMR_SimVars_Names[i])[3][1],last(getPlotSignal(instantiatedModeljLUISMR,jLUISMR_SimVars_Names[i])[3])))
+			if get(SignalTables.getSignal(instantiatedModeljLUISMR, jLUISMR_SimVars_Names[i]), :_class, 0) ==:Var
+				push!(jLUISMR_Vars_List_Store,(jLUISMR_SimVars_Names[i], SignalTables.getValues(instantiatedModeljLUISMR,jLUISMR_SimVars_Names[i])[1],last(getValues(instantiatedModeljLUISMR,jLUISMR_SimVars_Names[i]))))
+			end
 		end
 		set_gtk_property!(jLUISMRui["jLUISMR_debugg_window"], :text, "Simulation completed. Showing results.")
+		if get_gtk_property(jLUISMRui["jLUISMR_checkB_SaveResul"], "active", Bool)
+			writeSignalTable("jLUISMR_Modia_simulation_results.json", instantiatedModeljLUISMR, indent=2, log=true)
+		end
 		tv = GtkTreeView(GtkTreeModel(jLUISMR_Vars_List_Store))
 		selection = GAccessor.selection(tv)
 		rTxt = GtkCellRendererText()
@@ -65,19 +69,21 @@ function simulate_function()
 			if hasselection(selection)
     				currentIt = selected(selection)
     				println("Name: ", jLUISMR_Vars_List_Store[currentIt,1], " Initial value: ", jLUISMR_Vars_List_Store[currentIt,2], " Ending value: ", jLUISMR_Vars_List_Store[currentIt,3])
-				PyPlot.plot(getPlotSignal(instantiatedModeljLUISMR,"time")[3],getPlotSignal(instantiatedModeljLUISMR,jLUISMR_Vars_List_Store[currentIt,1])[3], label=jLUISMR_Vars_List_Store[currentIt,1])
+				PyPlot.plot(getValues(instantiatedModeljLUISMR,"time"), getValues(instantiatedModeljLUISMR,jLUISMR_Vars_List_Store[currentIt,1]), label=jLUISMR_Vars_List_Store[currentIt,1])
 				display(gcf())
   			end
 		end
-		win = GtkWindow(tv, "Simulation results. Click on the variable name to plot.")
-		showall(win)
+		push!(jLUISMRui["resultBox"], tv)
+		push!(jLUISMRui["jLUISMR_Main_window"], jLUISMRui["resultBox"])
+		showall(jLUISMRui["jLUISMR_Main_window"])
       	catch e
             println("Error found when attempting to simulate with jLUISMR")
           	rethrow(e)
       	end 
-	set_gtk_property!(jLUISMRui["jLUISMR_debugg_window"], :text, "Finished")
 	return nothing
 end
+
+#---------------------------Instantiate function for model validation -------------------------
 function instantiate_function()
 	val = eval(Meta.parse(gettext(jLUISMRui["jLUISMR_textual_model"])))
 	try
@@ -89,6 +95,8 @@ function instantiate_function()
 	set_gtk_property!(jLUISMRui["jLUISMR_debugg_window"], :text, "Instantiated")
 	return nothing
 end
+
+#---------------------------Library loading function for component modeling TO BE UPDATED -------------------------
 function load_library()
 	include(pwd() * "/Open_jLUISMR/Libraries/Electrical.jl")
 	textcontent = open(io->read(io, String), pwd() * "/Open_jLUISMR/Libraries/Electrical.txt")
@@ -99,12 +107,13 @@ function load_library()
 	return nothing
 end
 
-
+#---------------------------New model function -------------------------
 function file_new()
 	writetext!(jLUISMRui["jLUISMR_textual_model"], "")
 	return nothing
 end
 
+#---------------------------Open file with model function -------------------------
 function file_open()
     text.fileplace = open_dialog("Open file", jLUISMRui["jLUISMR_Main_window"], ("*.txt", "*",))
     if !isempty(text.fileplace)
@@ -117,6 +126,7 @@ function file_open()
     return nothing
 end
 
+#---------------------------Save model function -------------------------
 function file_save()
     if isempty(text.name)
         file_save_as()
@@ -128,6 +138,7 @@ function file_save()
     return nothing
 end
 
+#---------------------------Save as model function -------------------------
 function file_save_as()
     fileplace = save_dialog("Save file")
     if !isempty(fileplace)
@@ -141,6 +152,7 @@ function file_save_as()
     return nothing
 end
 
+#---------------------------Load help function -------------------------
 function help_QStart()
 	textcontent = open(io->read(io, String), pwd() * "/Open_jLUISMR/Resources/Quick_Start.txt")
 	writetext!(jLUISMRui["jLUISMR_help_TextView"], textcontent)
@@ -150,6 +162,7 @@ function help_QStart()
     return nothing
 end
 
+#---------------------------Load solver help function -------------------------
 function help_SolverGuide()
 	textcontent = open(io->read(io, String), pwd() * "/Open_jLUISMR/Resources/Solver_Guide.txt")
 	writetext!(jLUISMRui["jLUISMR_help_TextView"], textcontent)
@@ -159,6 +172,7 @@ function help_SolverGuide()
     return nothing
 end
 
+#---------------------------Load license function -------------------------
 function help_License()
 	textcontent = open(io->read(io, String), pwd() * "/Open_jLUISMR/LICENSE.txt")
 	writetext!(jLUISMRui["jLUISMR_help_TextView"], textcontent)
@@ -168,6 +182,7 @@ function help_License()
     return nothing
 end
 
+#---------------------------Load about function -------------------------
 function help_About()
 	textcontent = open(io->read(io, String), pwd() * "/Open_jLUISMR/Resources/About.txt")
 	writetext!(jLUISMRui["jLUISMR_help_TextView"], textcontent)
@@ -177,6 +192,7 @@ function help_About()
     return nothing
 end
 
+#---------------------------Buttons and clicked options -------------------------
 signal_connect(x -> file_open(), jLUISMRui["jLUISMR_Open_ToolButton"], "clicked")
 signal_connect(x -> file_save(), jLUISMRui["jLUISMR_Save_ToolButton"], "clicked")
 signal_connect(x -> instantiate_function(), jLUISMRui["jLUISMR_instantiate"], "clicked")
@@ -192,10 +208,13 @@ signal_connect((x,y)->help_QStart(), jLUISMRui["jLUISMR_help_QStart"], :activate
 signal_connect((x,y)->help_SolverGuide(), jLUISMRui["jLUISMR_help_SolverGuide"], :activate, Nothing, (), false)
 signal_connect((x,y)->help_License(), jLUISMRui["jLUISMR_help_License"], :activate, Nothing, (), false)
 signal_connect((x,y)->help_About(), jLUISMRui["jLUISMR_help_About"], :activate, Nothing, (), false)
+
+#---------------------------Main window -------------------------
 if !isinteractive()
 	c = Condition()
 	signal_connect(jLUISMRui["jLUISMR_Main_window"], :destroy) do widget
 		notify(c)
 	end
+	@async Gtk.gtk_main()
 	wait(c)
 end
