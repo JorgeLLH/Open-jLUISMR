@@ -9,10 +9,8 @@ Modia, PyPlot, Gtk, Gtk.ShortNames
 4) To find the working directory in Julia, type: pwd()
 5) Once the folder "Open_jLUISMR" has been in the directory shown using pwd(), run the following command: include(pwd() * "/Open_jLUISMR/jLUISMR.jl")
 6) jLUISMR should open and be ready to use! Please, create an Issue if you find any problems.
-
-## Known issues:
-- There seems to be some issue when closing the results window and the OS Win10. Win 11 seems to work well.
 - Please, notice that some of the packages may need some specific steps to be added to Julia. Follow the instructions in their webstites.
+
 
 ## References:
 - https://juliapackages.com/p/guiappexample
