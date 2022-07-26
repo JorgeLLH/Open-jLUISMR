@@ -2,9 +2,9 @@ This is a short description of the solvers currently available in Open jLUISMR, 
 
 	-Tsit5(): The default solver and recommended for most cases. It is an explicit Runge-Kutta method, consider a different solver if you are solving stiff equations.
 	-AutoTsit5(Rosenbrock23()): Recommended solver when the stiffness of the problem is unknown. 
-	-ImplicitEuler: 1st order solver for stiff equations. (A-B-L-stable; adaptive timestepping; strong-stability preserving). 
-	-TRBDF2: 2nd order solver for stiff equations (A-B-L-S-stable; one-step method; error estimates for adaptive timestepping; smoothed derivatives).
-	-ROS3P: 3rd order solver for stiff equations (A-stable; stiffly stable Rosenbrok method; high accuracy on discrtization of nonlinear-parabolic-PDEs).
+	-Feagin14: High accuracy method for non-stiff problems. 
+	-AitkenNeville: Parallelized euler explicit extrapolation method.
+	-ROCK4: 4th order stabilized Runge-Kutta method with high stability for real eigenvalues.
 
 For an example of a stiff equation see:
 File->Open->Open_jLUISMR->Examples->Stiff_Equation
