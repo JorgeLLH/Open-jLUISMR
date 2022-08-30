@@ -1,7 +1,5 @@
 #!/usr/bin/env julia
-using Modia, PyPlot, Gtk, Gtk.ShortNames
-
-pygui(true)
+using Modia, Plots, Gtk, Gtk.ShortNames
 
 mutable struct TextModule
     name::AbstractString
@@ -69,8 +67,8 @@ function simulate_function()
 			if hasselection(selection)
     				currentIt = selected(selection)
     				println("Name: ", jLUISMR_Vars_List_Store[currentIt,1], " Initial value: ", jLUISMR_Vars_List_Store[currentIt,2], " Ending value: ", jLUISMR_Vars_List_Store[currentIt,3])
-				PyPlot.plot(getValues(instantiatedModeljLUISMR,"time"), getValues(instantiatedModeljLUISMR,jLUISMR_Vars_List_Store[currentIt,1]), label=jLUISMR_Vars_List_Store[currentIt,1])
-				display(gcf())
+				Plots.plot(getValues(instantiatedModeljLUISMR,"time"), getValues(instantiatedModeljLUISMR,jLUISMR_Vars_List_Store[currentIt,1]), label=(jLUISMR_Vars_List_Store[currentIt,1]*" ["*get(SignalTables.getSignal(instantiatedModeljLUISMR, jLUISMR_Vars_List_Store[currentIt,1]), :unit, 0)*"]"))
+				gui()
   			end
 		end
 		push!(jLUISMRui["resultBox"], tv)
