@@ -703,24 +703,6 @@
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <child>
-                              <object class="GtkTextView" id="jLUISMR_help_TextView">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="editable">False</property>
-                                <property name="wrap-mode">word</property>
-                              </object>
-                            </child>
-                            <child type="tab">
-                              <object class="GtkLabel">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Help</property>
-                              </object>
-                              <packing>
-                                <property name="tab-fill">False</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkBox">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
@@ -763,9 +745,24 @@
                                     <property name="position">0</property>
                                   </packing>
                                 </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
+                              </object>
+                            </child>
+                            <child type="tab">
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Results</property>
+                              </object>
+                              <packing>
+                                <property name="tab-fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkTextView" id="jLUISMR_help_TextView">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="editable">False</property>
+                                <property name="wrap-mode">word</property>
                               </object>
                               <packing>
                                 <property name="position">1</property>
@@ -775,7 +772,7 @@
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Results</property>
+                                <property name="label" translatable="yes">Help</property>
                               </object>
                               <packing>
                                 <property name="position">1</property>
