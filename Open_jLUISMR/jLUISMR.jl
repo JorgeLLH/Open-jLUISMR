@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 using Modia, Plots, Gtk, Gtk.ShortNames
-
+ 
 mutable struct TextModule
     name::AbstractString
     fileplace::AbstractString
@@ -23,7 +23,17 @@ writetext!(jLUISMRui["jLUISMR_help_TextView"], textcontent)
 function simulate_function()
 	jLUISMR_Vars_List_Store = GtkListStore(String, Float64, Float64)
 	jLUISMR_SimVars_Names = GtkListStore(String)
-	val = eval(Meta.parse(gettext(jLUISMRui["jLUISMR_textual_model"])))
+	#val = eval(Meta.parse(gettext(jLUISMRui["jLUISMR_textual_model"])))
+	jLUISMR_pred_plot_pattern=r"pdPlot<<.+>>"
+	val = gettext(jLUISMRui["jLUISMR_textual_model"])
+	jLUISMR_pred_plots = match(jLUISMR_pred_plot_pattern, val)
+	val = replace(val, jLUISMR_pred_plot_pattern => "")
+	val = eval(Meta.parse(val))
+	jLUISMR_pred_plots=(jLUISMR_pred_plots === nothing) ? "0" : replace(jLUISMR_pred_plots.match, r"pdPlot<<" => "");
+	jLUISMR_pred_plots=replace(jLUISMR_pred_plots, r">>" => "");
+	store_string=split(jLUISMR_pred_plots, ";");
+	store_string_vars=split(store_string[1], ",")#(length(jLUISMR_SimVars_Names) > 0) ? split(store_string[1], ",") : 0;
+
 	set_gtk_property!(jLUISMRui["jLUISMR_debugg_window"], :text, "")
 
 	jLUISMR_startTime=eval(Meta.parse(gettext(jLUISMRui["jLUISMR_start_Time"])))
@@ -43,8 +53,17 @@ function simulate_function()
 		jLUISMR_allow_Simulation=true
 	end
 	try
-           	instantiatedModeljLUISMR=@instantiateModel(val)
+          instantiatedModeljLUISMR=@instantiateModel(val)
 		result=simulate!(instantiatedModeljLUISMR, eval(Meta.parse(Gtk.bytestring( GAccessor.active_text(jLUISMRui["jLUISMR_solver_test"])))), startTime=jLUISMR_startTime, stopTime = jLUISMR_stopTime, interval=jLUISMR_interval, log=true)
+		if (length(store_string) == 3) && store_string[3]=="Animate" #store_string[3] evaluated only if length is enough
+			predefined_MP4_Plots(instantiatedModeljLUISMR,String(string(store_string_vars[1])),String(string(store_string_vars[2])),String(string(store_string_vars[3])),String(string(store_string[2])),jLUISMR_interval)
+		elseif (length(store_string) == 3) && store_string[3]=="Plots" #store_string[3] evaluated only if length is enough
+			predefined_plot_Plots(instantiatedModeljLUISMR,String(string(store_string_vars[1])),String(string(store_string_vars[2])),String(string(store_string[2])))
+		elseif (length(store_string) == 2)
+			predefined_plot_Plots(instantiatedModeljLUISMR,String(string(store_string_vars[1])),String(string(store_string_vars[2])),String(string(store_string[2])))
+		elseif (length(store_string) == 1) && (length(store_string_vars) > 1)
+			predefined_plot_Plots(instantiatedModeljLUISMR,String(string(store_string_vars[1])),String(string(store_string_vars[2])))
+		end
 		jLUISMR_SimVars_Names = SignalTables.getSignalNames(instantiatedModeljLUISMR)
 		for i in 1:length(jLUISMR_SimVars_Names)
 			if get(SignalTables.getSignal(instantiatedModeljLUISMR, jLUISMR_SimVars_Names[i]), :_class, 0) ==:Var
@@ -83,7 +102,10 @@ end
 
 #---------------------------Instantiate function for model validation -------------------------
 function instantiate_function()
-	val = eval(Meta.parse(gettext(jLUISMRui["jLUISMR_textual_model"])))
+	#val = eval(Meta.parse(gettext(jLUISMRui["jLUISMR_textual_model"])))
+	val = gettext(jLUISMRui["jLUISMR_textual_model"])
+	val = replace(val, r"pdPlot<<.+>>" => "")
+	val = eval(Meta.parse(val))
 	try
            	instantiatedModeljLUISMR=@instantiateModel(val)
       catch e
@@ -96,7 +118,8 @@ end
 
 #---------------------------Library loading function for component modeling TO BE UPDATED -------------------------
 function load_library()
-	include(pwd() * "/Open_jLUISMR/Libraries/Electrical.jl")
+	#include(pwd() * "/Open_jLUISMR/Libraries/Electrical.jl")
+	include("$(Modia.modelsPath)/Electric.jl")
 	textcontent = open(io->read(io, String), pwd() * "/Open_jLUISMR/Libraries/Electrical.txt")
 	writetext!(jLUISMRui["jLUISMR_help_TextView"], textcontent)
 	text.name = split(text.fileplace, "/")[end]
@@ -188,6 +211,45 @@ function help_About()
 	set_gtk_property!(jLUISMRui["jLUISMR_Main_window"], :title, text.name)
 
     return nothing
+end
+
+#---------------------------Predefined plot function Plots-------------------------
+function predefined_plot_Plots(instantiatedModeljLUISMR,predef_var1,predef_var2,predef_title)
+	Plots.plot(getValues(instantiatedModeljLUISMR,predef_var1), getValues(instantiatedModeljLUISMR,predef_var2), title=predef_title, label=(predef_var2*" ["*get(SignalTables.getSignal(instantiatedModeljLUISMR, predef_var2), :unit, 0)*"]"))
+	gui()
+	return nothing
+end
+
+#---------------------------Predefined plot function Makie DEPRECATED-------------------------
+function predefined_plot_Makie(instantiatedModeljLUISMR,predef_var1,predef_var2,predef_title)
+	#GLMakie.activate!();
+    	#fig = Figure(; resolution=(400, 400));
+    	#ax1 = Axis3(fig[1, 1];title=predef_title, aspect=(1, 1, 1), perspectiveness=0.5);
+	#GLMakie.lines!(ax1, getValues(instantiatedModeljLUISMR,predef_var1), getValues(instantiatedModeljLUISMR,predef_var2));
+    	#GLMakie.display(fig)
+	#return nothing
+end
+
+#---------------------------Predefined PlotsMP4 function Plots-------------------------
+function predefined_MP4_Plots(instantiatedModeljLUISMR,predef_var1,predef_var2,predef_var3,predef_title,jLUISMR_interval)
+	x_LUISMR_MP4=getValues(instantiatedModeljLUISMR,predef_var1)
+	y_LUISMR_MP4=getValues(instantiatedModeljLUISMR,predef_var2)
+	z_LUISMR_MP4=getValues(instantiatedModeljLUISMR,predef_var3)
+	jLUISMR_fps=floor(Int, 1/jLUISMR_interval)
+	LUISMR_MP4 = Plots.plot3d(
+           1,
+           xlim = (minimum(x_LUISMR_MP4), maximum(x_LUISMR_MP4)),
+           ylim = (minimum(y_LUISMR_MP4), maximum(y_LUISMR_MP4)),
+           zlim = (minimum(z_LUISMR_MP4), maximum(z_LUISMR_MP4)),
+           title = predef_title,
+           legend = false,
+           marker = 2,
+       )
+	anim = @animate for i in 1: length(x_LUISMR_MP4)    
+	push!(LUISMR_MP4,x_LUISMR_MP4[i], y_LUISMR_MP4[i], z_LUISMR_MP4[i])  
+	end every 1;
+	gif(anim,"LUISMR_MP4.mp4", fps = jLUISMR_fps);
+	return nothing
 end
 
 #---------------------------Buttons and clicked options -------------------------
