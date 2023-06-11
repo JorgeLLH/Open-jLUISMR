@@ -2,9 +2,9 @@
 Pure Julia based GUI for Modia built using Gtk
 
 ## Packages needed:
-Modia, Plots, Gtk, Gtk.ShortNames
+Modia, Plots, Gtk
 1) In Julia type: ]
-2) Then type: add Modia, Plots, Gtk, Gtk.ShortNames
+2) Then type: add Modia, Plots, Gtk
 3) Download the files and extract the zip. Copy the folder named "Open_jLUISMR" to your working directory
 4) To find the working directory in Julia, type: pwd()
 5) Once the folder "Open_jLUISMR" has been in the directory shown using pwd(), run the following command: include(pwd() * "/Open_jLUISMR/jLUISMR.jl")
